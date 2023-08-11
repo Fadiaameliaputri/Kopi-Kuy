@@ -14,10 +14,17 @@
     <script src="js/jquery-3.6.3.min.js"></script>
     <style>
         /* tulis kode CSS internal di bawah sini */
+        .btn {
+            background: #084508;
+        }
 
-    .body {
-       background-image: url(images/background/bgkopi.png);
-    }
+        .btn-buy {
+            background-color: rgba(199, 87, 23, 255);
+        }
+
+        .body {
+            background-image: url(images/background/bgkopi.png);
+        }
 
         /* Batas Akhir penulisan kode CSS internal */
     </style>
@@ -67,20 +74,37 @@
             <hr class="border border-success border-3 opacity-75">
 
             <!-- Ini Untuk Select -->
-           
-            <div class="form-floating col-md-4 mx-auto">
-                <select class="form-select" id="select_kopi" aria-label="Floating label select example">
-                    <option selected value="all">-</option>
-                    <option value="arabica">Arabica</option>
-                    <option value="robusta">Robusta</option>
-                    <option value="nonkopi">Non Kopi</option>
-                    
-                </select>
-                <label for="select_kopi">Pilih Jenis Kopi</label>
+
+            <div class="container">
+                <div class="d-flex gap-4">
+                    <div class="input-group rounded">
+                        <input type="search" id="searchInput" class="form-control rounded" placeholder="Search"
+                            aria-label="Search" aria-describedby="search-addon" />
+                    </div>
+                    <div class="form-floating col-3">
+                        <select class="form-select" id="select_kopi" aria-label="Floating label select example">
+                            <option value="semua">semua produk</option>
+                            <option value="arabica">Arabica</option>
+                            <option value="robusta">Robusta</option>
+                            <option value="nonkopi">Non kopi</option>
+                        </select>
+                        <label for="select_kopi">Pilih Jenis Kopi</label>
+                    </div>
+                    <div class="form-floating col-3">
+                        <select class="form-select" id="sortSelect" aria-label="Floating label select example">
+                            <option value="asc">Termurah</option>
+                            <option value="desc">Termahal</option>
+                        </select>
+                        <label for="sortSelect">Urutan Harga:</label>
+                    </div>
+
+
+
+                </div>
             </div>
 
-
             <div id="baris_produk" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 text-center mt-5">
+
 
             </div>
         </div>
@@ -121,54 +145,87 @@
 
     <!-- Batas Akhir penulisan kode Bootstrap -->
     <script>
-        /* Tulis Javascript Di bawah Sini */
-        var sumber = "https://rikikurnia.com/prakerja/api/kopi"
-        var sumber2 = "data.json"
-        var dipilih = ""
-        var data_kopi = []
+        var sumber = "https://rikikurnia.com/prakerja/api/kopi";
+        var sumber2 = "data.json";
+        var sortSelect = $("#sortSelect");
 
+        $("#select_kopi").on("change", function () {
+            var dipilih = $(this).val();
+            ambilData(dipilih);
+        });
 
-        select_kopi.onchange = function () {
-            var dipilih = this.value
-            console.log(dipilih)
+        $("#searchInput").on("input", function () {
+            var dipilih = $("#select_kopi").val();
+            var searchTerm = $(this).val();
+            ambilData(dipilih, searchTerm);
+        });
 
-            ambilData(dipilih)
-        }
+        sortSelect.on("change", function () {
+            var dipilih = $("#select_kopi").val();
+            var searchTerm = $("#searchInput").val();
+            var sortOrder = $(this).val();
+            ambilData(dipilih, searchTerm, sortOrder);
+        });
 
-        function ambilData(dipilih) {
-            $.getJSON(sumber).then(function (data) {
-                data_kopi = data[dipilih]
-                console.log(data_kopi)
-                baris_produk.innerHTML = ""
-               
-              data_kopi.forEach(item => {
-                    baris_produk.innerHTML += `<div class="col mb-4">
-                                    <div class="card">
-                                        <img src="${item.foto}" class="card-img-top" alt="...">
-                                        <div class="card-body">
-                                            <h5 class="card-title">${item.nama}</h5>
-                                            <div class="row hargasize my-4">
-                                                <div class="col">
-                                                    ${item.size}
-                                                </div>
-                                                <div class="col fw-bold text-success">
-                                                    ${item.harga}
-                                                </div>
-                                            </div>
-                                            <a href="${item.link}" class="btn btn-success w-100">
-                                                <i class="bi bi-cart4"></i> Beli
-                                            </a>
+        function ambilData(dipilih, searchTerm = "", sortOrder = "asc") {
+            var template = "";
+            $.getJSON(sumber).done(function (data) {
+                var data_kopi = [];
+
+                if (dipilih == "semua") {
+                    data_kopi.push(...data.arabica);
+                    data_kopi.push(...data.robusta);
+                    data_kopi.push(...data.nonkopi);
+                } else {
+                    data_kopi = data[dipilih];
+                }
+
+                if (searchTerm !== "") {
+                    data_kopi = data_kopi.filter(function (item) {
+                        return (
+                            item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            item.size.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            item.harga.toString().includes(searchTerm)
+                        );
+                    });
+                }
+
+                data_kopi.sort(function (a, b) {
+                    if (sortOrder === "asc") {
+                        return a.harga - b.harga;
+                    } else {
+                        return b.harga - a.harga;
+                    }
+                });
+
+                data_kopi.forEach(function (item) {
+                    template += `<div class="col mb-4">
+                            <div class="card">
+                                <img src="${item.foto}" class="card-img-top" alt="...">
+                                <div class="card-body">
+                                    <h5 class="card-title">${item.nama}</h5>
+                                    <div class="row my-4">
+                                        <div class="col">
+                                            ${item.size}
+                                        </div>
+                                        <div class="col">
+                                            ${item.harga}
                                         </div>
                                     </div>
-                                </div>`
-                })
+                                    <a href="${item.link}" class="btn btn-success w-100"><i class="bi bi-cart4"></i> Beli</a>
+                                </div>
+                            </div>
+                        </div>`;
+                });
 
-            })
-
+                $("#baris_produk").html(template);
+            });
         }
 
-        /* Batas Akhir penulisan kode Javascript */
+        ambilData("semua");
+
     </script>
+
 </body>
 
 </html>
