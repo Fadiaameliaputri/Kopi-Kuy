@@ -1,1 +1,1 @@
-# Kopi-Kuy
+# KopiKuy
